@@ -18,6 +18,8 @@
 - [Тесты](#тесты)
 - [API](#api)
 - [Продакшн-деплой на VPS](#продакшн-деплой-на-vps)
+  - [Вариант A: чистый VPS, без своего nginx (Caddy)](#вариант-a-чистый-vps-без-своего-nginx-caddy)
+  - [Вариант B: на VPS уже есть свой nginx](#вариант-b-на-vps-уже-есть-свой-nginx)
 - [Caddyfile: что это и зачем](#caddyfile-что-это-и-зачем)
 
 ## Возможности
@@ -54,7 +56,9 @@ PostgreSQL, Pydantic v2, passlib[bcrypt], JWT (python-jose), APScheduler,
 **Frontend:** React + Vite + TypeScript, Tailwind CSS v4 + shadcn/ui (на
 Base UI), TanStack Query, Recharts, framer-motion.
 
-**Инфраструктура:** Docker Compose, Caddy (продакшн, автоматический HTTPS).
+**Инфраструктура:** Docker Compose; в проде — либо Caddy (автоматический
+HTTPS), либо существующий на VPS nginx — см. [Продакшн-деплой на
+VPS](#продакшн-деплой-на-vps).
 
 ## Структура репозитория
 
@@ -76,8 +80,11 @@ moneo/
  │       ├─ components/ переиспользуемые компоненты, включая ui/ (shadcn)
  │       ├─ hooks/      TanStack Query хуки, по одному на ресурс backend'а
  │       └─ lib/        api-клиент, форматирование, утилиты
- ├─ docker-compose.yml       дев-стек: db, backend, worker, frontend
- ├─ docker-compose.prod.yml  прод-стек: + Caddy (HTTPS)
+ ├─ docker-compose.yml             дев-стек: db, backend, worker, frontend
+ ├─ docker-compose.prod.yml        база прод-стека: db, backend, worker, frontend (без входа снаружи)
+ ├─ docker-compose.prod.caddy.yml  оверлей: + Caddy (для VPS без своего nginx)
+ ├─ docker-compose.prod.nginx.yml  оверлей: frontend на 127.0.0.1 (для VPS со своим nginx)
+ ├─ deploy/nginx.conf.example      пример конфига хостового nginx для варианта B
  ├─ Caddyfile
  ├─ .env.example
  └─ CLAUDE.md         заметки по архитектуре для разработки с Claude Code
@@ -161,7 +168,8 @@ npm run dev
 | `EXCHANGE_RATE_API_URL` | API курсов валют (по умолчанию — [open.er-api.com](https://www.exchangerate-api.com/), без ключа) |
 | `SMTP_*` | Почта для писем восстановления пароля; если пусто — ссылка на сброс просто пишется в лог backend |
 | `VITE_API_URL` | Адрес backend для фронтенда в режиме `npm run dev` |
-| `DOMAIN`, `ACME_EMAIL` | Домен и email для автоматического TLS-сертификата Caddy (только прод) |
+| `DOMAIN`, `ACME_EMAIL` | Домен и email для автоматического TLS-сертификата Caddy (только прод, вариант A) |
+| `APP_PORT` | Порт на `127.0.0.1`, на который публикуется frontend (только прод, вариант B — свой nginx) |
 
 ## База данных и миграции
 
@@ -197,35 +205,92 @@ http://localhost:8000/docs. Все эндпоинты смонтированы �
 
 ## Продакшн-деплой на VPS
 
+`docker-compose.prod.yml` — общая база (db, backend, worker, frontend), у нее
+нет ни одного порта, открытого наружу. Кто именно принимает трафик снаружи и
+выпускает TLS — выбирается оверлеем поверх базы, в зависимости от того, есть
+ли на VPS уже свой nginx (или другой reverse-proxy).
+
+Общие для обоих вариантов шаги:
+
 1. Установите на VPS Docker и Docker Compose.
 2. Склонируйте репозиторий, создайте `.env` из `.env.example` и заполните
-   реальными значениями: пароль БД, `SECRET_KEY`, `COOKIE_SECURE=true`,
-   `DOMAIN`, `ACME_EMAIL`.
-3. В DNS (Cloudflare) укажите A-запись домена на IP VPS. Режим SSL в
-   Cloudflare — **Full (Strict)**, либо DNS-only («серая тучка»), если
-   сертификат должен выпускаться самим Caddy напрямую.
-4. Запустите прод-конфигурацию:
+   реальными значениями: пароль БД, `SECRET_KEY`, `COOKIE_SECURE=true`.
+3. В DNS (Cloudflare) укажите A-запись поддомена на IP VPS, режим — **DNS
+   only** («серая тучка»). Проксирование через Cloudflare (оранжевая тучка)
+   можно включить позже, когда TLS уже настроен и работает напрямую.
+
+Дальше — по варианту.
+
+### Вариант A: чистый VPS, без своего nginx (Caddy)
+
+Caddy сам займёт порты 80/443 и сам выпустит сертификат Let's Encrypt.
+
+1. Заполните в `.env`: `DOMAIN=ваш-поддомен`, `ACME_EMAIL=ваша-почта`.
+2. Запустите:
 
    ```bash
-   docker compose -f docker-compose.prod.yml up -d --build
+   docker compose -f docker-compose.prod.yml -f docker-compose.prod.caddy.yml up -d --build
    ```
 
-   Caddy автоматически выпустит и будет обновлять TLS-сертификат Let's
-   Encrypt для домена из `DOMAIN`.
-5. Обновление после изменений в коде:
+3. Проверьте выпуск сертификата:
 
    ```bash
-   git pull
-   docker compose -f docker-compose.prod.yml up -d --build
+   docker compose -f docker-compose.prod.yml -f docker-compose.prod.caddy.yml logs -f caddy
    ```
 
-В `docker-compose.prod.yml`, в отличие от дев-версии, у `db`/`backend`/`worker`/`frontend`
-нет портов, торчащих наружу — единственная точка входа снаружи — `caddy` на 80/443.
+Обновление после изменений в коде:
+
+```bash
+git pull
+docker compose -f docker-compose.prod.yml -f docker-compose.prod.caddy.yml up -d --build
+```
+
+### Вариант B: на VPS уже есть свой nginx
+
+Если на машине уже крутится nginx (например, обслуживает другие сайты),
+поднимать ещё и Caddy на 80/443 не выйдет — порты уже заняты. В этом случае
+Caddy не используется вообще: TLS и проксирование берёт на себя существующий
+nginx, а `frontend`-контейнер публикуется только на `127.0.0.1`.
+
+1. В `.env` `DOMAIN`/`ACME_EMAIL` не нужны (это только для Caddy); при
+   желании задайте `APP_PORT` (по умолчанию `8090`), если он занят чем-то ещё.
+2. Запустите:
+
+   ```bash
+   docker compose -f docker-compose.prod.yml -f docker-compose.prod.nginx.yml up -d --build
+   ```
+
+   Frontend теперь слушает `127.0.0.1:8090` (или ваш `APP_PORT`) и наружу не торчит.
+3. Добавьте хостовый vhost на основе [`deploy/nginx.conf.example`](deploy/nginx.conf.example):
+
+   ```bash
+   sudo cp deploy/nginx.conf.example /etc/nginx/sites-available/moneo
+   sudo nano /etc/nginx/sites-available/moneo   # впишите свой домен и APP_PORT
+   sudo ln -s /etc/nginx/sites-available/moneo /etc/nginx/sites-enabled/
+   sudo nginx -t && sudo systemctl reload nginx
+   ```
+
+4. Выпустите сертификат через уже имеющийся у вас certbot:
+
+   ```bash
+   sudo certbot --nginx -d ваш-поддомен
+   ```
+
+Обновление после изменений в коде:
+
+```bash
+git pull
+docker compose -f docker-compose.prod.yml -f docker-compose.prod.nginx.yml up -d --build
+```
+
+(nginx на хосте трогать не нужно — он просто проксирует на тот же порт.)
 
 ## Caddyfile: что это и зачем
 
-`Caddyfile` — конфигурация веб-сервера [Caddy](https://caddyserver.com/),
-который в проде играет роль **reverse proxy**: единственный контейнер,
+Актуально только для [варианта A](#вариант-a-чистый-vps-без-своего-nginx-caddy)
+(без своего nginx на хосте). `Caddyfile` — конфигурация веб-сервера
+[Caddy](https://caddyserver.com/), который в проде играет роль **reverse
+proxy**: единственный контейнер,
 слушающий порты 80/443 и общающийся с внешним миром, всё остальное
 (backend, frontend, db, worker) сидит только во внутренней docker-сети.
 

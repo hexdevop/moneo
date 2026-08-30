@@ -1,0 +1,11 @@
+# Оверлей для хостов, где на машине УЖЕ есть свой nginx (со своим certbot и т.д.).
+# Caddy не используется — frontend просто публикует порт только на localhost,
+# а TLS и проксирование делает хостовый nginx. Пример конфига — в deploy/nginx.conf.example.
+#
+# Запуск:
+#   docker compose -f docker-compose.prod.yml -f docker-compose.prod.nginx.yml up -d --build
+
+services:
+  frontend:
+    ports:
+      - "127.0.0.1:${APP_PORT:-8090}:80"

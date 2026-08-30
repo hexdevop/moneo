@@ -1,0 +1,25 @@
+# Пример конфига для хостового nginx, если на VPS уже есть свой nginx
+# (и поэтому используется docker-compose.prod.nginx.yml вместо Caddy).
+#
+# 1. Скопируйте на VPS: /etc/nginx/sites-available/moneo.example.com
+# 2. Замените moneo.example.com на свой домен, 8090 — на APP_PORT из .env,
+#    если меняли значение по умолчанию.
+# 3. sudo ln -s /etc/nginx/sites-available/moneo.example.com /etc/nginx/sites-enabled/
+# 4. sudo nginx -t && sudo systemctl reload nginx
+# 5. sudo certbot --nginx -d moneo.example.com   — допишет TLS и редирект с 80 на 443
+
+server {
+    listen 80;
+    server_name moneo.example.com;
+
+    # больше дефолтного 1m — нужно для загрузки фото профиля (лимит 2 МБ на backend)
+    client_max_body_size 3m;
+
+    location / {
+        proxy_pass http://127.0.0.1:8090;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}

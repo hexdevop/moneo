@@ -1,0 +1,26 @@
+# Оверлей для хостов БЕЗ своего nginx/reverse-proxy: Caddy сам занимает 80/443
+# и сам выпускает TLS-сертификат Let's Encrypt.
+#
+# Запуск:
+#   docker compose -f docker-compose.prod.yml -f docker-compose.prod.caddy.yml up -d --build
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+
+volumes:
+  caddy_data:
+  caddy_config:
