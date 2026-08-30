@@ -53,7 +53,7 @@ export function TransactionsPage() {
   async function handleDelete(id: number) {
     try {
       await deleteTransaction.mutateAsync(id)
-      toast.success("Транзакция удалена")
+      toast.success("Транзакция перемещена в корзину")
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Не удалось удалить транзакцию")
     }

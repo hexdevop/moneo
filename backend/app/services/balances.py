@@ -11,10 +11,10 @@ async def get_account_balances(db: AsyncSession, user_id: int) -> dict[int, floa
         (Transaction.type == TransactionType.income, Transaction.amount),
         (Transaction.type == TransactionType.expense, -Transaction.amount),
         else_=-Transaction.amount,  # transfer: leaves the source account
-    )
+    ) - func.coalesce(Transaction.fee, 0)
     result = await db.execute(
         select(Transaction.account_id, func.sum(signed_amount))
-        .where(Transaction.user_id == user_id)
+        .where(Transaction.user_id == user_id, Transaction.deleted_at.is_(None))
         .group_by(Transaction.account_id)
     )
     balances = {account_id: float(total) for account_id, total in result.all()}
@@ -25,6 +25,7 @@ async def get_account_balances(db: AsyncSession, user_id: int) -> dict[int, floa
             Transaction.user_id == user_id,
             Transaction.type == TransactionType.transfer,
             Transaction.transfer_account_id.is_not(None),
+            Transaction.deleted_at.is_(None),
         )
         .group_by(Transaction.transfer_account_id)
     )

@@ -36,6 +36,7 @@ async def process_due_recurring_payments(db: AsyncSession) -> int:
         select(RecurringPayment).where(
             RecurringPayment.is_active.is_(True),
             RecurringPayment.next_date <= today,
+            RecurringPayment.deleted_at.is_(None),
         )
     )
     payments = result.scalars().all()

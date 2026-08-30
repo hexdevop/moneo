@@ -1,16 +1,14 @@
 from datetime import date as date_type
 
-from sqlalchemy import ForeignKey, Numeric, String, UniqueConstraint
+from sqlalchemy import ForeignKey, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
+from app.models.mixins import SoftDeleteMixin
 
 
-class Budget(Base):
+class Budget(SoftDeleteMixin, Base):
     __tablename__ = "budgets"
-    __table_args__ = (
-        UniqueConstraint("user_id", "category_id", "month", name="uq_budget_month"),
-    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(

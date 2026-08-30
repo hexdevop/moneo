@@ -3,9 +3,10 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
 from app.models.enums import CategoryType
+from app.models.mixins import SoftDeleteMixin
 
 
-class Category(Base):
+class Category(SoftDeleteMixin, Base):
     __tablename__ = "categories"
 
     id: Mapped[int] = mapped_column(primary_key=True)

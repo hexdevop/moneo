@@ -5,9 +5,10 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
 from app.models.enums import RecurrenceFrequency
+from app.models.mixins import SoftDeleteMixin
 
 
-class RecurringPayment(Base):
+class RecurringPayment(SoftDeleteMixin, Base):
     __tablename__ = "recurring_payments"
 
     id: Mapped[int] = mapped_column(primary_key=True)

@@ -15,6 +15,7 @@ import { GoalsPage } from "@/pages/GoalsPage"
 import { RecurringPage } from "@/pages/RecurringPage"
 import { SettingsPage } from "@/pages/SettingsPage"
 import { TransactionsPage } from "@/pages/TransactionsPage"
+import { TrashPage } from "@/pages/TrashPage"
 
 export default function App() {
   return (
@@ -33,6 +34,7 @@ export default function App() {
             <Route path="/budgets" element={<BudgetsPage />} />
             <Route path="/recurring" element={<RecurringPage />} />
             <Route path="/goals" element={<GoalsPage />} />
+            <Route path="/trash" element={<TrashPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
         </Routes>

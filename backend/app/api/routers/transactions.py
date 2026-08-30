@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import and_, func, select
@@ -32,12 +32,13 @@ def _to_out(transaction: Transaction) -> TransactionOut:
         date=transaction.date,
         note=transaction.note,
         tags=transaction.tags,
+        fee=float(transaction.fee) if transaction.fee is not None else None,
     )
 
 
 async def _check_owned_account(db: AsyncSession, user: User, account_id: int) -> Account:
     account = await db.get(Account, account_id)
-    if account is None or account.user_id != user.id:
+    if account is None or account.user_id != user.id or account.deleted_at is not None:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Счёт не найден")
     return account
 
@@ -46,7 +47,11 @@ async def _check_owned_category(db: AsyncSession, user: User, category_id: int |
     if category_id is None:
         return
     category = await db.get(Category, category_id)
-    if category is None or (category.user_id is not None and category.user_id != user.id):
+    if (
+        category is None
+        or (category.user_id is not None and category.user_id != user.id)
+        or category.deleted_at is not None
+    ):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Категория не найдена")
 
 
@@ -65,7 +70,7 @@ async def list_transactions(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    filters = [Transaction.user_id == user.id]
+    filters = [Transaction.user_id == user.id, Transaction.deleted_at.is_(None)]
     if date_from is not None:
         filters.append(Transaction.date >= date_from)
     if date_to is not None:
@@ -123,6 +128,7 @@ async def create_transaction(
         date=data.date,
         note=data.note,
         tags=data.tags,
+        fee=data.fee,
     )
     db.add(transaction)
     await db.commit()
@@ -132,7 +138,7 @@ async def create_transaction(
 
 async def _get_owned_transaction(db: AsyncSession, user: User, transaction_id: int) -> Transaction:
     transaction = await db.get(Transaction, transaction_id)
-    if transaction is None or transaction.user_id != user.id:
+    if transaction is None or transaction.user_id != user.id or transaction.deleted_at is not None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Транзакция не найдена")
     return transaction
 
@@ -179,5 +185,5 @@ async def delete_transaction(
     transaction_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
 ):
     transaction = await _get_owned_transaction(db, user, transaction_id)
-    await db.delete(transaction)
+    transaction.deleted_at = datetime.utcnow()
     await db.commit()

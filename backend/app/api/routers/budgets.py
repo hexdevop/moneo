@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 
 from dateutil.relativedelta import relativedelta
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -44,6 +44,7 @@ async def _compute_spent(db: AsyncSession, user: User, budget: Budget) -> tuple[
                 Transaction.type == TransactionType.expense,
                 Transaction.date >= month_start,
                 Transaction.date < month_end,
+                Transaction.deleted_at.is_(None),
             )
         )
     ).scalars().all()
@@ -75,7 +76,11 @@ async def _to_out(db: AsyncSession, user: User, budget: Budget) -> BudgetOut:
 
 async def _check_owned_category(db: AsyncSession, user: User, category_id: int) -> None:
     category = await db.get(Category, category_id)
-    if category is None or (category.user_id is not None and category.user_id != user.id):
+    if (
+        category is None
+        or (category.user_id is not None and category.user_id != user.id)
+        or category.deleted_at is not None
+    ):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Категория не найдена")
 
 
@@ -85,7 +90,7 @@ async def list_budgets(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    query = select(Budget).where(Budget.user_id == user.id)
+    query = select(Budget).where(Budget.user_id == user.id, Budget.deleted_at.is_(None))
     if month is not None:
         query = query.where(Budget.month == _month_start(month))
     budgets = (await db.execute(query.order_by(Budget.month.desc()))).scalars().all()
@@ -104,6 +109,7 @@ async def create_budget(
             Budget.user_id == user.id,
             Budget.category_id == data.category_id,
             Budget.month == month_start,
+            Budget.deleted_at.is_(None),
         )
     )
     if existing.scalar_one_or_none() is not None:
@@ -124,7 +130,7 @@ async def create_budget(
 
 async def _get_owned_budget(db: AsyncSession, user: User, budget_id: int) -> Budget:
     budget = await db.get(Budget, budget_id)
-    if budget is None or budget.user_id != user.id:
+    if budget is None or budget.user_id != user.id or budget.deleted_at is not None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Бюджет не найден")
     return budget
 
@@ -149,7 +155,7 @@ async def delete_budget(
     budget_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
 ):
     budget = await _get_owned_budget(db, user, budget_id)
-    await db.delete(budget)
+    budget.deleted_at = datetime.utcnow()
     await db.commit()
 
 
@@ -163,13 +169,15 @@ async def copy_budgets_to_next_month(
 
     current = (
         await db.execute(
-            select(Budget).where(Budget.user_id == user.id, Budget.month == month_start)
+            select(Budget).where(
+                Budget.user_id == user.id, Budget.month == month_start, Budget.deleted_at.is_(None)
+            )
         )
     ).scalars().all()
     existing_next = (
         await db.execute(
             select(Budget.category_id).where(
-                Budget.user_id == user.id, Budget.month == next_month
+                Budget.user_id == user.id, Budget.month == next_month, Budget.deleted_at.is_(None)
             )
         )
     ).scalars().all()

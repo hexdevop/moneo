@@ -1,11 +1,13 @@
+from datetime import date, datetime
+
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user
 from app.db.session import get_db
 from app.models.account import Account
-from app.models.recurring_payment import RecurringPayment
+from app.models.enums import TransactionType
 from app.models.transaction import Transaction
 from app.models.user import User
 from app.schemas.account import AccountCreate, AccountOut, AccountUpdate
@@ -36,7 +38,7 @@ async def list_accounts(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    query = select(Account).where(Account.user_id == user.id)
+    query = select(Account).where(Account.user_id == user.id, Account.deleted_at.is_(None))
     if not include_archived:
         query = query.where(Account.is_archived.is_(False))
     accounts = (await db.execute(query.order_by(Account.id))).scalars().all()
@@ -53,18 +55,37 @@ async def list_accounts(
 async def create_account(
     data: AccountCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
 ):
-    account = Account(user_id=user.id, **data.model_dump())
+    fields = data.model_dump(exclude={"initial_balance"})
+    account = Account(user_id=user.id, **fields)
     account.currency = account.currency.upper()
     db.add(account)
+    await db.flush()
+
+    if data.initial_balance:
+        rate = await get_exchange_rate(db, account.currency, user.base_currency)
+        db.add(
+            Transaction(
+                user_id=user.id,
+                account_id=account.id,
+                type=TransactionType.income if data.initial_balance > 0 else TransactionType.expense,
+                amount=abs(data.initial_balance),
+                currency=account.currency,
+                exchange_rate_to_base=rate,
+                date=date.today(),
+                note="Начальный баланс",
+            )
+        )
+
     await db.commit()
     await db.refresh(account)
     rate = await get_exchange_rate(db, account.currency, user.base_currency)
-    return await _to_out(account, 0.0, rate)
+    balances = await get_account_balances(db, user.id)
+    return await _to_out(account, balances.get(account.id, 0.0), rate)
 
 
 async def _get_owned_account(db: AsyncSession, user: User, account_id: int) -> Account:
     account = await db.get(Account, account_id)
-    if account is None or account.user_id != user.id:
+    if account is None or account.user_id != user.id or account.deleted_at is not None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Счёт не найден")
     return account
 
@@ -101,27 +122,5 @@ async def delete_account(
     account_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
 ):
     account = await _get_owned_account(db, user, account_id)
-    has_transactions = await db.execute(
-        select(func.count())
-        .select_from(Transaction)
-        .where(
-            (Transaction.account_id == account_id) | (Transaction.transfer_account_id == account_id)
-        )
-    )
-    if has_transactions.scalar_one() > 0:
-        raise HTTPException(
-            status.HTTP_409_CONFLICT,
-            "У счёта есть транзакции, архивируйте его вместо удаления",
-        )
-    has_recurring = await db.execute(
-        select(func.count())
-        .select_from(RecurringPayment)
-        .where(RecurringPayment.account_id == account_id)
-    )
-    if has_recurring.scalar_one() > 0:
-        raise HTTPException(
-            status.HTTP_409_CONFLICT,
-            "У счёта есть регулярные платежи, архивируйте его вместо удаления",
-        )
-    await db.delete(account)
+    account.deleted_at = datetime.utcnow()
     await db.commit()

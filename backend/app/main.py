@@ -19,6 +19,7 @@ from app.api.routers import (
     goals,
     recurring,
     transactions,
+    trash,
     users,
 )
 from app.core.config import get_settings
@@ -56,6 +57,7 @@ api_router.include_router(transactions.router)
 api_router.include_router(budgets.router)
 api_router.include_router(recurring.router)
 api_router.include_router(goals.router)
+api_router.include_router(trash.router)
 api_router.include_router(dashboard.router)
 api_router.include_router(users.router)
 app.include_router(api_router)

@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { useAccounts } from "@/hooks/useAccounts"
@@ -29,6 +30,7 @@ import { toLocalISODate } from "@/lib/format"
 import type { Transaction, TransactionType } from "@/types"
 
 const COMMON_CURRENCIES = ["USD", "EUR", "UZS", "RUB", "GBP"]
+const FEE_PRESETS = [0.1, 0.2, 0.5, 1, 2]
 
 interface TransactionFormProps {
   open: boolean
@@ -62,6 +64,19 @@ export function TransactionForm({
   const [date, setDate] = useState(transaction?.date ?? toLocalISODate(new Date()))
   const [note, setNote] = useState(transaction?.note ?? "")
   const [tags, setTags] = useState(transaction?.tags?.join(", ") ?? "")
+  const [feeEnabled, setFeeEnabled] = useState(Boolean(transaction?.fee))
+  const [feeMode, setFeeMode] = useState<"percent" | "fixed">(transaction?.fee ? "fixed" : "percent")
+  const [feePercent, setFeePercent] = useState("")
+  const [fee, setFee] = useState(transaction?.fee ? String(transaction.fee) : "")
+
+  const selectedAccount = accounts.find((a) => a.id === accountId)
+
+  useEffect(() => {
+    if (feeMode !== "percent") return
+    const pct = Number(feePercent)
+    const amt = Number(amount)
+    setFee(pct > 0 && amt > 0 ? (amt * (pct / 100)).toFixed(2) : "")
+  }, [feeMode, feePercent, amount])
 
   const createMutation = useCreateTransaction()
   const updateMutation = useUpdateTransaction()
@@ -74,7 +89,7 @@ export function TransactionForm({
   }, [open, accountId, accounts, currency])
 
   useEffect(() => {
-    if (!open) {
+    if (open) {
       setType(transaction?.type ?? "expense")
       setAccountId(transaction?.account_id ?? defaultAccountId ?? accounts[0]?.id)
       setTransferAccountId(transaction?.transfer_account_id ?? undefined)
@@ -84,6 +99,10 @@ export function TransactionForm({
       setDate(transaction?.date ?? toLocalISODate(new Date()))
       setNote(transaction?.note ?? "")
       setTags(transaction?.tags?.join(", ") ?? "")
+      setFeeEnabled(Boolean(transaction?.fee))
+      setFeeMode(transaction?.fee ? "fixed" : "percent")
+      setFeePercent("")
+      setFee(transaction?.fee ? String(transaction.fee) : "")
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
@@ -107,6 +126,7 @@ export function TransactionForm({
             .map((t) => t.trim())
             .filter(Boolean)
         : null,
+      fee: feeEnabled && fee ? Number(fee) : null,
     }
 
     try {
@@ -244,6 +264,69 @@ export function TransactionForm({
               </datalist>
             </div>
           </div>
+
+          {selectedAccount?.type === "card" && (
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="fee-toggle">Комиссия за операцию</Label>
+                <Switch id="fee-toggle" checked={feeEnabled} onCheckedChange={setFeeEnabled} />
+              </div>
+              {feeEnabled && (
+                <div className="space-y-2 rounded-md border border-border p-3">
+                  <Tabs value={feeMode} onValueChange={(v) => setFeeMode(v as "percent" | "fixed")}>
+                    <TabsList className="w-full">
+                      <TabsTrigger value="percent" className="flex-1">
+                        % от суммы
+                      </TabsTrigger>
+                      <TabsTrigger value="fixed" className="flex-1">
+                        Сумма
+                      </TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+
+                  {feeMode === "percent" ? (
+                    <>
+                      <div className="flex flex-wrap gap-1.5">
+                        {FEE_PRESETS.map((p) => (
+                          <Button
+                            key={p}
+                            type="button"
+                            size="sm"
+                            variant={feePercent === String(p) ? "default" : "outline"}
+                            onClick={() => setFeePercent(String(p))}
+                          >
+                            {p}%
+                          </Button>
+                        ))}
+                      </div>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="Свой процент"
+                        value={feePercent}
+                        onChange={(e) => setFeePercent(e.target.value)}
+                      />
+                      {fee && (
+                        <p className="text-xs text-muted-foreground">
+                          Комиссия: {fee} {currency}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="Сумма комиссии"
+                      value={fee}
+                      onChange={(e) => setFee(e.target.value)}
+                    />
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="space-y-1.5">
             <Label>Дата</Label>

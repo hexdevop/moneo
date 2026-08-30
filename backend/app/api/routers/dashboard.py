@@ -43,6 +43,7 @@ async def summary(
             Transaction.date >= date_from,
             Transaction.date <= date_to,
             Transaction.type.in_([TransactionType.income, TransactionType.expense]),
+            Transaction.deleted_at.is_(None),
         )
         .group_by(Transaction.type)
     )
@@ -54,7 +55,13 @@ async def summary(
             expense = float(total)
 
     accounts = (
-        await db.execute(select(Account).where(Account.user_id == user.id, Account.is_archived.is_(False)))
+        await db.execute(
+            select(Account).where(
+                Account.user_id == user.id,
+                Account.is_archived.is_(False),
+                Account.deleted_at.is_(None),
+            )
+        )
     ).scalars().all()
     balances = await get_account_balances(db, user.id)
     total_balance_base = 0.0
@@ -86,6 +93,7 @@ async def _top_categories(
             Transaction.type == txn_type,
             Transaction.date >= date_from,
             Transaction.date <= date_to,
+            Transaction.deleted_at.is_(None),
         )
         .group_by(Category.id)
         .order_by(func.sum(BASE_AMOUNT).desc())
@@ -137,6 +145,7 @@ async def trend(
             Transaction.user_id == user.id,
             Transaction.date >= start_month,
             Transaction.type.in_([TransactionType.income, TransactionType.expense]),
+            Transaction.deleted_at.is_(None),
         )
         .group_by("month", Transaction.type)
         .order_by("month")
@@ -175,6 +184,7 @@ async def compare(
                 Transaction.date >= date_from,
                 Transaction.date <= date_to,
                 Transaction.type.in_([TransactionType.income, TransactionType.expense]),
+                Transaction.deleted_at.is_(None),
             )
             .group_by(Transaction.type)
         )

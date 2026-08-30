@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 
 from dateutil.relativedelta import relativedelta
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -46,14 +46,18 @@ async def _check_owned_account(db: AsyncSession, user: User, account_id: int | N
     if account_id is None:
         return
     account = await db.get(Account, account_id)
-    if account is None or account.user_id != user.id:
+    if account is None or account.user_id != user.id or account.deleted_at is not None:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Счёт не найден")
 
 
 @router.get("", response_model=list[GoalOut])
 async def list_goals(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     goals = (
-        await db.execute(select(Goal).where(Goal.user_id == user.id).order_by(Goal.id))
+        await db.execute(
+            select(Goal)
+            .where(Goal.user_id == user.id, Goal.deleted_at.is_(None))
+            .order_by(Goal.id)
+        )
     ).scalars().all()
     return [_to_out(g) for g in goals]
 
@@ -73,7 +77,7 @@ async def create_goal(
 
 async def _get_owned_goal(db: AsyncSession, user: User, goal_id: int) -> Goal:
     goal = await db.get(Goal, goal_id)
-    if goal is None or goal.user_id != user.id:
+    if goal is None or goal.user_id != user.id or goal.deleted_at is not None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Цель не найдена")
     return goal
 
@@ -101,5 +105,5 @@ async def delete_goal(
     goal_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
 ):
     goal = await _get_owned_goal(db, user, goal_id)
-    await db.delete(goal)
+    goal.deleted_at = datetime.utcnow()
     await db.commit()

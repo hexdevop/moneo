@@ -7,6 +7,7 @@ import {
   Repeat,
   Settings,
   Target,
+  Trash2,
   Wallet,
   WalletCards,
 } from "lucide-react"
@@ -29,6 +30,7 @@ const NAV_ITEMS = [
   { to: "/budgets", label: "Бюджеты", icon: WalletCards },
   { to: "/recurring", label: "Подписки", icon: Repeat },
   { to: "/goals", label: "Цели", icon: Target },
+  { to: "/trash", label: "Корзина", icon: Trash2 },
   { to: "/settings", label: "Настройки", icon: Settings },
 ]
 

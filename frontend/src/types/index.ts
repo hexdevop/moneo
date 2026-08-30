@@ -49,6 +49,7 @@ export interface Transaction {
   date: string
   note: string | null
   tags: string[] | null
+  fee: number | null
 }
 
 export interface Page<T> {
@@ -127,4 +128,14 @@ export interface CategoryBreakdown {
     amount_base: number
     percent: number
   }[]
+}
+
+export type TrashResourceType = "account" | "transaction" | "category" | "budget" | "recurring" | "goal"
+
+export interface TrashItem {
+  resource_type: TrashResourceType
+  id: number
+  label: string
+  subtitle: string | null
+  deleted_at: string
 }

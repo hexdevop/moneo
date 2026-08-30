@@ -62,7 +62,7 @@ export function RecurringPage() {
   async function handleDelete(id: number) {
     try {
       await deleteRecurring.mutateAsync(id)
-      toast.success("Регулярный платёж удалён")
+      toast.success("Регулярный платёж перемещён в корзину")
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Не удалось удалить")
     }

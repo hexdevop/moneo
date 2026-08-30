@@ -2,6 +2,14 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Communication
+
+Always respond to the user in Russian in this repository, regardless of what language they
+write in — this has been requested explicitly more than once. Code, identifiers, commit
+messages, and comments stay in English as usual; only the chat responses are Russian.
+Never run `git commit`/`git push` yourself — always give the user the commit message text
+and let them run it.
+
 ## Project
 
 Moneo — personal finance tracker (multi-currency accounts, transactions, budgets,

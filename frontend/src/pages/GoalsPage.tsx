@@ -31,7 +31,7 @@ export function GoalsPage() {
   async function handleDelete(id: number) {
     try {
       await deleteGoal.mutateAsync(id)
-      toast.success("Цель удалена")
+      toast.success("Цель перемещена в корзину")
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Не удалось удалить цель")
     }

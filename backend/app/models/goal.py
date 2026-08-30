@@ -4,9 +4,10 @@ from sqlalchemy import ForeignKey, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
+from app.models.mixins import SoftDeleteMixin
 
 
-class Goal(Base):
+class Goal(SoftDeleteMixin, Base):
     __tablename__ = "goals"
 
     id: Mapped[int] = mapped_column(primary_key=True)

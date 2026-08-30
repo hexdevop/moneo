@@ -37,6 +37,7 @@ export interface TransactionInput {
   date: string
   note?: string | null
   tags?: string[] | null
+  fee?: number | null
 }
 
 function invalidateAfterMutation(queryClient: ReturnType<typeof useQueryClient>) {

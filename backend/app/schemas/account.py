@@ -8,6 +8,7 @@ class AccountCreate(BaseModel):
     currency: str = Field(min_length=3, max_length=3)
     type: AccountType = AccountType.cash
     color: str = "#6366f1"
+    initial_balance: float = 0
 
 
 class AccountUpdate(BaseModel):

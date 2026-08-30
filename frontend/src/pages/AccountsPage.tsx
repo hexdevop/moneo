@@ -101,7 +101,7 @@ function AccountCard({ account }: { account: Account }) {
   async function handleDelete() {
     try {
       await deleteAccount.mutateAsync(account.id)
-      toast.success("Счёт удалён")
+      toast.success("Счёт перемещён в корзину")
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Не удалось удалить счёт")
     }
@@ -152,13 +152,21 @@ function AccountFormDialog({ onDone }: { onDone: () => void }) {
   const [currency, setCurrency] = useState("USD")
   const [type, setType] = useState<AccountType>("cash")
   const [color, setColor] = useState(COLORS[0])
+  const [initialBalance, setInitialBalance] = useState("")
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     try {
-      await createAccount.mutateAsync({ name, currency: currency.toUpperCase(), type, color })
+      await createAccount.mutateAsync({
+        name,
+        currency: currency.toUpperCase(),
+        type,
+        color,
+        initial_balance: initialBalance ? Number(initialBalance) : 0,
+      })
       toast.success("Счёт создан")
       setName("")
+      setInitialBalance("")
       onDone()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Не удалось создать счёт")
@@ -195,6 +203,16 @@ function AccountFormDialog({ onDone }: { onDone: () => void }) {
               </SelectContent>
             </Select>
           </div>
+        </div>
+        <div className="space-y-1.5">
+          <Label>Начальный баланс</Label>
+          <Input
+            type="number"
+            step="0.01"
+            placeholder="0"
+            value={initialBalance}
+            onChange={(e) => setInitialBalance(e.target.value)}
+          />
         </div>
         <div className="space-y-1.5">
           <Label>Цвет</Label>

@@ -15,6 +15,7 @@ class TransactionCreate(BaseModel):
     date: date_type
     note: str | None = Field(default=None, max_length=500)
     tags: list[str] | None = None
+    fee: float | None = Field(default=None, ge=0)
 
     @model_validator(mode="after")
     def check_transfer(self) -> "TransactionCreate":
@@ -36,6 +37,7 @@ class TransactionUpdate(BaseModel):
     date: date_type | None = None
     note: str | None = Field(default=None, max_length=500)
     tags: list[str] | None = None
+    fee: float | None = Field(default=None, ge=0)
 
 
 class TransactionOut(BaseModel):
@@ -51,5 +53,6 @@ class TransactionOut(BaseModel):
     date: date_type
     note: str | None
     tags: list[str] | None
+    fee: float | None
 
     model_config = {"from_attributes": True}

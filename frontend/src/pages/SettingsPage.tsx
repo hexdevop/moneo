@@ -46,6 +46,11 @@ const CATEGORY_ICONS = [
   "heart",
   "book-open",
   "briefcase",
+  "send",
+  "hand-coins",
+  "landmark",
+  "undo-2",
+  "users",
 ]
 
 export function SettingsPage() {
@@ -276,6 +281,7 @@ function CategoriesTab() {
   async function handleDelete(id: number) {
     try {
       await deleteCategory.mutateAsync(id)
+      toast.success("Категория перемещена в корзину")
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Не удалось удалить категорию")
     }

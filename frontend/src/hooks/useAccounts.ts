@@ -20,6 +20,7 @@ export interface AccountInput {
   currency: string
   type: AccountType
   color: string
+  initial_balance?: number
 }
 
 export function useCreateAccount() {
