@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 60 * 24 * 7
     # Set to true in production (served over HTTPS behind Caddy).
     cookie_secure: bool = False
+    # Creates a demo account (demo@moneo.example) with sample data on startup.
+    # Off by default — enable only for local/dev demos, never in production.
+    seed_demo_data: bool = False
 
     cors_origins: str = "http://localhost:5173"
 

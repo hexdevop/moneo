@@ -22,6 +22,7 @@ services:
     env_file: .env
     environment:
       POSTGRES_HOST: db
+      SEED_DEMO_DATA: "true"
     depends_on:
       db:
         condition: service_healthy

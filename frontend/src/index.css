@@ -107,3 +107,22 @@
     display: none;
   }
 }
+
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+.wheel-fade {
+  mask-image: linear-gradient(to bottom, transparent, black 28px, black calc(100% - 28px), transparent);
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    black 28px,
+    black calc(100% - 28px),
+    transparent
+  );
+}

@@ -107,7 +107,37 @@ Categories are shared, not per-user: `user_id IS NULL` means a global preset (se
 once at API startup by `ensure_preset_categories`, idempotent), `user_id = <id>` means
 a user's own custom category. Icon names are kebab-case lucide-react component names
 (`heart-pulse`, `more-horizontal`) — the frontend's `CategoryIcon` component converts
-kebab-case to the PascalCase export.
+kebab-case to the PascalCase export. `ensure_preset_categories` diffs by
+`(name, type)` against what's already in the DB and inserts only what's missing, so
+adding a new preset to `PRESET_CATEGORIES` in `categories_seed.py` reaches existing
+databases on their next startup — no migration needed.
+
+### Trash (soft delete)
+
+Every user-deletable resource (accounts, transactions, categories, budgets, recurring
+payments, goals) uses `SoftDeleteMixin` (`app/models/mixins.py`), which just adds a
+nullable `deleted_at`. A normal `DELETE` endpoint sets `deleted_at = now()` instead of
+removing the row; every list/get query and every `_check_owned_*` ownership helper
+filters `deleted_at IS NULL`. `app/api/routers/trash.py` exposes `GET /trash` (unions
+all six tables), `POST /trash/{type}/{id}/restore` (clears `deleted_at`), and
+`DELETE /trash/{type}/{id}` (real hard delete). Permanently deleting an account or
+category is blocked with a 409 while it still has *active* (non-trashed) transactions
+— mirrors the safety checks a hard delete used to have, just moved to this endpoint.
+Budgets dropped their `(user_id, category_id, month)` unique DB constraint for this
+reason: a trashed budget must not block creating a new one for the same slot.
+
+### Demo data
+
+`app/services/demo_seed.py` — `ensure_demo_data()` creates one demo user
+(`demo@moneo.example` / `DemoPass123`) with ~6 months of realistic accounts,
+transactions, budgets, recurring payments, and goals, computed relative to
+`date.today()` (so it stays sensible no matter when someone runs it). It's called
+from the `lifespan` in `main.py` right after `ensure_preset_categories`, gated by
+`settings.seed_demo_data` (env `SEED_DEMO_DATA`, default `false`). Idempotent by
+checking whether a user with that email already exists — safe to leave the flag on
+across restarts. The dev `docker-compose.yml` sets `SEED_DEMO_DATA: "true"` directly
+in the service's `environment:` (not `.env`), so a fresh clone gets a populated demo
+account with zero configuration; prod compose files never set it.
 
 ### Frontend
 
@@ -128,6 +158,39 @@ kebab-case to the PascalCase export.
 - Use `toLocalISODate()` from `src/lib/format.ts` for any "today" or month-boundary
   date, never `.toISOString().slice(0, 10)` — `toISOString()` converts to UTC first,
   which rolls the date back a day for any user in a positive UTC offset.
+- `src/components/WheelDatePicker.tsx` — hand-built iOS-style scroll-snap date
+  picker (day/month/year columns, real min/max year bounds, no wraparound). Used
+  everywhere a date is entered (`TransactionForm`, `RecurringPage`, `GoalsPage`,
+  the transactions filter dialog) instead of `<input type="date">`. Each column
+  guards against a real footgun: a click-driven `scrollTo` and the `onScroll`
+  listener that reads back the settled value can race (the scroll's own event
+  fires mid-animation and misreads the still-moving position as the user's
+  choice, stomping the click). `programmaticRef` in `WheelColumn` suppresses
+  `onScroll` handling while a scroll was triggered by code rather than a drag.
+- `src/components/ui/tabs.tsx` renders a `<TabsPrimitive.Indicator>` (Base UI's
+  built-in sliding highlight, driven by the `--active-tab-left`/`--active-tab-width`
+  CSS vars it sets) automatically inside every `TabsList`, so all tab usages
+  (transaction type, fee mode, Settings tabs) get the sliding-pill animation for
+  free with no per-call-site change. Individual `TabsTrigger`s no longer carry
+  their own active background — the shared indicator is the only thing painting
+  the active state now.
+- `AppLayout`'s sidebar is one component for both desktop and mobile, controlled by
+  a single `open` boolean and one toggle button (in the header). CSS alone decides
+  what `open` means per breakpoint: below `md` it's `-translate-x-full`/`translate-x-0`
+  (an off-canvas drawer with a backdrop), at `md`+ it's `md:w-16`/`md:w-60` (an
+  icon-only rail vs. the full sidebar, always in-flow). The initial value is
+  computed once from `window.innerWidth >= 768` — deliberately no resize listener,
+  so mid-session window resizing won't flip it (acceptable for a phone/desktop app).
+  `NavLink` clicks call `closeOnMobile()`, which is a no-op at `md`+, so navigating
+  doesn't collapse the desktop sidebar.
+- The transactions list uses infinite scroll (`useInfiniteTransactions` +
+  scroll-position check in `TransactionsPage`), not an `IntersectionObserver`.
+  An observer-based version worked in a real browser but never fired in this
+  project's headless preview tooling (paint/compositor appears to be suspended
+  for an off-screen tab, which stalls `IntersectionObserver` callbacks); a plain
+  `scroll` listener on `window` with `capture: true` (needed since the actual
+  scrolling element is `<main>`, not `window`, and `scroll` doesn't bubble) is
+  simpler and was verified to work in both places.
 
 ### Tests
 

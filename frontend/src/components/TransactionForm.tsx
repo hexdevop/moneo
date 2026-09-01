@@ -23,10 +23,11 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
+import { WheelDatePicker } from "@/components/WheelDatePicker"
 import { useAccounts } from "@/hooks/useAccounts"
 import { useCategories } from "@/hooks/useCategories"
 import { useCreateTransaction, useUpdateTransaction } from "@/hooks/useTransactions"
-import { toLocalISODate } from "@/lib/format"
+import { formatDate, toLocalISODate } from "@/lib/format"
 import type { Transaction, TransactionType } from "@/types"
 
 const COMMON_CURRENCIES = ["USD", "EUR", "UZS", "RUB", "GBP"]
@@ -329,8 +330,11 @@ export function TransactionForm({
           )}
 
           <div className="space-y-1.5">
-            <Label>Дата</Label>
-            <Input type="date" required value={date} onChange={(e) => setDate(e.target.value)} />
+            <div className="flex items-center justify-between">
+              <Label>Дата</Label>
+              <span className="text-xs text-muted-foreground">{formatDate(date)}</span>
+            </div>
+            <WheelDatePicker value={date} onChange={setDate} />
           </div>
 
           <div className="space-y-1.5">

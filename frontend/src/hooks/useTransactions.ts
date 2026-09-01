@@ -1,4 +1,4 @@
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 
 import { api } from "@/lib/api"
 import type { Page, Transaction, TransactionType } from "@/types"
@@ -12,18 +12,24 @@ export interface TransactionFilters {
   amount_min?: number
   amount_max?: number
   search?: string
-  page?: number
-  page_size?: number
 }
 
-export function useTransactions(filters: TransactionFilters) {
-  return useQuery<Page<Transaction>>({
-    queryKey: ["transactions", filters],
-    queryFn: async () => {
-      const { data } = await api.get<Page<Transaction>>("/transactions", { params: filters })
+const INFINITE_PAGE_SIZE = 20
+
+export function useInfiniteTransactions(filters: TransactionFilters) {
+  return useInfiniteQuery({
+    queryKey: ["transactions", "infinite", filters],
+    queryFn: async ({ pageParam }) => {
+      const { data } = await api.get<Page<Transaction>>("/transactions", {
+        params: { ...filters, page: pageParam, page_size: INFINITE_PAGE_SIZE },
+      })
       return data
     },
-    placeholderData: keepPreviousData,
+    initialPageParam: 1,
+    getNextPageParam: (lastPage, allPages) => {
+      const loaded = allPages.reduce((sum, p) => sum + p.items.length, 0)
+      return loaded < lastPage.total ? allPages.length + 1 : undefined
+    },
   })
 }
 

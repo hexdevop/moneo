@@ -83,17 +83,19 @@ export function BudgetsPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-2xl font-semibold">Бюджеты</h1>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={() => shiftMonth(-1)} aria-label="Предыдущий месяц">
-            <ChevronLeft className="size-4" />
-          </Button>
-          <span className="w-36 text-center text-sm font-medium">{formatMonth(month)}</span>
-          <Button variant="outline" size="icon" onClick={() => shiftMonth(1)} aria-label="Следующий месяц">
-            <ChevronRight className="size-4" />
-          </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={() => shiftMonth(-1)} aria-label="Предыдущий месяц">
+              <ChevronLeft className="size-4" />
+            </Button>
+            <span className="w-28 text-center text-sm font-medium sm:w-36">{formatMonth(month)}</span>
+            <Button variant="outline" size="icon" onClick={() => shiftMonth(1)} aria-label="Следующий месяц">
+              <ChevronRight className="size-4" />
+            </Button>
+          </div>
           <Button variant="outline" size="sm" className="gap-1.5" onClick={handleCopy} disabled={copyBudgets.isPending}>
             <CopyPlus className="size-4" />
-            Перенести на след. месяц
+            <span className="hidden sm:inline">Перенести на след. месяц</span>
           </Button>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger

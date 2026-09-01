@@ -20,6 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useCategoryBreakdown, useDashboardSummary, useDashboardTrend } from "@/hooks/useDashboard"
 import { useMe } from "@/hooks/useAuth"
 import { formatMonth, formatMoney, toLocalISODate } from "@/lib/format"
+import { cn } from "@/lib/utils"
 
 const COLORS = ["#6366f1", "#f97316", "#22c55e", "#ec4899", "#06b6d4", "#a855f7", "#f59e0b"]
 
@@ -47,13 +48,15 @@ export function DashboardPage() {
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        className="grid gap-4 sm:grid-cols-3"
+        className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4"
       >
         <StatCard
           title="Общий баланс"
           value={summary ? formatMoney(summary.balance_total_base, currency) : "—"}
           icon={Wallet}
           loading={summaryLoading}
+          featured
+          className="col-span-2 sm:col-span-1"
         />
         <StatCard
           title="Доход за месяц"
@@ -158,32 +161,43 @@ function StatCard({
   icon: Icon,
   loading,
   tone,
+  featured,
+  className,
 }: {
   title: string
   value: string
   icon: typeof Wallet
   loading?: boolean
   tone?: "positive" | "negative"
+  featured?: boolean
+  className?: string
 }) {
   return (
-    <Card>
-      <CardContent className="flex items-center gap-4 pt-6">
-        <div
-          className={
-            "flex size-10 shrink-0 items-center justify-center rounded-full " +
-            (tone === "positive"
-              ? "bg-green-500/10 text-green-600"
-              : tone === "negative"
-                ? "bg-red-500/10 text-red-600"
-                : "bg-primary/10 text-primary")
-          }
+    <Card className={cn(featured && "bg-primary/5", className)}>
+      <CardContent className="pt-5">
+        <div className="flex items-center gap-2">
+          <div
+            className={cn(
+              "flex size-7 shrink-0 items-center justify-center rounded-full",
+              tone === "positive"
+                ? "bg-green-500/10 text-green-600"
+                : tone === "negative"
+                  ? "bg-red-500/10 text-red-600"
+                  : "bg-primary/10 text-primary"
+            )}
+          >
+            <Icon className="size-3.5" />
+          </div>
+          <p className="truncate text-xs text-muted-foreground">{title}</p>
+        </div>
+        <p
+          className={cn(
+            "mt-2 truncate font-semibold",
+            featured ? "text-2xl sm:text-xl" : "text-base sm:text-lg"
+          )}
         >
-          <Icon className="size-5" />
-        </div>
-        <div>
-          <p className="text-xs text-muted-foreground">{title}</p>
-          <p className="text-lg font-semibold">{loading ? "…" : value}</p>
-        </div>
+          {loading ? "…" : value}
+        </p>
       </CardContent>
     </Card>
   )

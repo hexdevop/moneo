@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { WheelDatePicker } from "@/components/WheelDatePicker"
 import { useAccounts } from "@/hooks/useAccounts"
 import { useCategories } from "@/hooks/useCategories"
 import {
@@ -239,26 +240,24 @@ function RecurringFormDialog({ onDone }: { onDone: () => void }) {
             </SelectContent>
           </Select>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <Label>Периодичность</Label>
-            <Select items={FREQUENCY_LABELS} value={frequency} onValueChange={(v) => setFrequency(v as RecurrenceFrequency)}>
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(FREQUENCY_LABELS).map(([value, label]) => (
-                  <SelectItem key={value} value={value}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label>Дата списания</Label>
-            <Input type="date" required value={nextDate} onChange={(e) => setNextDate(e.target.value)} />
-          </div>
+        <div className="space-y-1.5">
+          <Label>Периодичность</Label>
+          <Select items={FREQUENCY_LABELS} value={frequency} onValueChange={(v) => setFrequency(v as RecurrenceFrequency)}>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(FREQUENCY_LABELS).map(([value, label]) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label>Дата списания</Label>
+          <WheelDatePicker value={nextDate} onChange={setNextDate} />
         </div>
         <DialogFooter>
           <Button type="submit" className="w-full" disabled={createRecurring.isPending}>

@@ -16,9 +16,10 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Progress } from "@/components/ui/progress"
+import { WheelDatePicker } from "@/components/WheelDatePicker"
 import { useCreateGoal, useDeleteGoal, useGoals, useUpdateGoal } from "@/hooks/useGoals"
 import { useMe } from "@/hooks/useAuth"
-import { formatDate, formatMoney } from "@/lib/format"
+import { formatDate, formatMoney, toLocalISODate } from "@/lib/format"
 
 export function GoalsPage() {
   const { data: user } = useMe()
@@ -175,8 +176,30 @@ function GoalFormDialog({ defaultCurrency, onDone }: { defaultCurrency: string; 
           </div>
         </div>
         <div className="space-y-1.5">
-          <Label>Срок (необязательно)</Label>
-          <Input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
+          <div className="flex items-center justify-between">
+            <Label>Срок (необязательно)</Label>
+            {deadline && (
+              <button
+                type="button"
+                className="text-xs text-muted-foreground hover:text-foreground"
+                onClick={() => setDeadline("")}
+              >
+                Убрать срок
+              </button>
+            )}
+          </div>
+          {deadline ? (
+            <WheelDatePicker value={deadline} onChange={setDeadline} />
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setDeadline(toLocalISODate(new Date()))}
+            >
+              Указать срок
+            </Button>
+          )}
         </div>
         <DialogFooter>
           <Button type="submit" className="w-full" disabled={createGoal.isPending}>

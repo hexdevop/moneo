@@ -25,6 +25,7 @@ from app.api.routers import (
 from app.core.config import get_settings
 from app.db.session import async_session_factory
 from app.services.categories_seed import ensure_preset_categories
+from app.services.demo_seed import ensure_demo_data
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("moneo")
@@ -36,6 +37,8 @@ settings = get_settings()
 async def lifespan(app: FastAPI):
     async with async_session_factory() as db:
         await ensure_preset_categories(db)
+        if settings.seed_demo_data:
+            await ensure_demo_data(db)
     yield
 
 
