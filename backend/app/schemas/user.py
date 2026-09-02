@@ -23,6 +23,7 @@ class UserOut(BaseModel):
     name: str
     base_currency: str
     theme_preference: ThemePreference
+    hide_accounts_balance: bool
     has_avatar: bool
 
     model_config = {"from_attributes": True}
@@ -32,6 +33,7 @@ class UserUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=100)
     base_currency: str | None = Field(default=None, min_length=3, max_length=3)
     theme_preference: ThemePreference | None = None
+    hide_accounts_balance: bool | None = None
 
 
 class PasswordChange(BaseModel):

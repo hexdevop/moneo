@@ -4,6 +4,7 @@ import { useState } from "react"
 import type { FormEvent } from "react"
 import { toast } from "sonner"
 
+import { HideBalanceToggle, MASKED_BALANCE } from "@/components/HideBalanceToggle"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import {
@@ -30,6 +31,7 @@ import {
   useUpdateAccount,
 } from "@/hooks/useAccounts"
 import { useMe } from "@/hooks/useAuth"
+import { useHideBalance } from "@/hooks/useHideBalance"
 import { formatMoney } from "@/lib/format"
 import type { Account, AccountType } from "@/types"
 
@@ -52,8 +54,14 @@ const TYPE_LABELS: Record<AccountType, string> = {
 const COLORS = ["#6366f1", "#22c55e", "#f97316", "#ec4899", "#06b6d4", "#a855f7", "#64748b"]
 
 export function AccountsPage() {
+  const { data: user } = useMe()
   const { data: accounts = [], isLoading } = useAccounts(true)
+  const { hidden: hideBalance } = useHideBalance()
   const [dialogOpen, setDialogOpen] = useState(false)
+
+  const totalBalanceBase = accounts
+    .filter((a) => !a.is_archived)
+    .reduce((sum, a) => sum + a.balance_base, 0)
 
   return (
     <div className="space-y-6">
@@ -67,6 +75,20 @@ export function AccountsPage() {
           <AccountFormDialog onDone={() => setDialogOpen(false)} />
         </Dialog>
       </div>
+
+      {accounts.length > 0 && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-1">
+              <p className="text-xs text-muted-foreground">Общий баланс</p>
+              <HideBalanceToggle />
+            </div>
+            <p className="mt-1 text-2xl font-semibold">
+              {hideBalance ? MASKED_BALANCE : formatMoney(totalBalanceBase, user?.base_currency ?? "USD")}
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Загрузка…</p>
@@ -90,6 +112,7 @@ export function AccountsPage() {
 
 function AccountCard({ account }: { account: Account }) {
   const { data: user } = useMe()
+  const { hidden: hideBalance } = useHideBalance()
   const updateAccount = useUpdateAccount()
   const deleteAccount = useDeleteAccount()
   const Icon = TYPE_ICONS[account.type]
@@ -134,8 +157,10 @@ function AccountCard({ account }: { account: Account }) {
           </div>
           <p className="mt-3 font-medium">{account.name}</p>
           <p className="text-xs text-muted-foreground">{TYPE_LABELS[account.type]}</p>
-          <p className="mt-3 text-xl font-semibold">{formatMoney(account.balance, account.currency)}</p>
-          {user && account.currency !== user.base_currency && (
+          <p className="mt-3 text-xl font-semibold">
+            {hideBalance ? MASKED_BALANCE : formatMoney(account.balance, account.currency)}
+          </p>
+          {!hideBalance && user && account.currency !== user.base_currency && (
             <p className="text-xs text-muted-foreground">
               ≈ {formatMoney(account.balance_base, user.base_currency)}
             </p>

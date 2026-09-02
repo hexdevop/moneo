@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Enum, LargeBinary, String
+from sqlalchemy import Boolean, Enum, LargeBinary, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -20,6 +20,7 @@ class User(TimestampMixin, Base):
     theme_preference: Mapped[ThemePreference] = mapped_column(
         Enum(ThemePreference, name="theme_preference"), default=ThemePreference.light
     )
+    hide_accounts_balance: Mapped[bool] = mapped_column(Boolean, default=False)
 
     reset_token: Mapped[str | None] = mapped_column(String(255), default=None)
     reset_token_expires: Mapped[datetime | None] = mapped_column(default=None)

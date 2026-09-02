@@ -1,6 +1,7 @@
 import { motion } from "framer-motion"
 import { ArrowDownRight, ArrowUpRight, Wallet } from "lucide-react"
 import { useMemo } from "react"
+import type { ReactNode } from "react"
 import {
   Bar,
   BarChart,
@@ -16,9 +17,11 @@ import {
 } from "recharts"
 
 import { CategoryIcon } from "@/components/CategoryIcon"
+import { HideBalanceToggle, MASKED_BALANCE } from "@/components/HideBalanceToggle"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useCategoryBreakdown, useDashboardSummary, useDashboardTrend } from "@/hooks/useDashboard"
 import { useMe } from "@/hooks/useAuth"
+import { useHideBalance } from "@/hooks/useHideBalance"
 import { formatMonth, formatMoney, toLocalISODate } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
@@ -27,6 +30,7 @@ const COLORS = ["#6366f1", "#f97316", "#22c55e", "#ec4899", "#06b6d4", "#a855f7"
 export function DashboardPage() {
   const { data: user } = useMe()
   const currency = user?.base_currency ?? "USD"
+  const { hidden: hideBalance } = useHideBalance()
   const { data: summary, isLoading: summaryLoading } = useDashboardSummary()
   const { data: trend = [] } = useDashboardTrend(6)
 
@@ -52,10 +56,11 @@ export function DashboardPage() {
       >
         <StatCard
           title="Общий баланс"
-          value={summary ? formatMoney(summary.balance_total_base, currency) : "—"}
+          value={hideBalance ? MASKED_BALANCE : summary ? formatMoney(summary.balance_total_base, currency) : "—"}
           icon={Wallet}
           loading={summaryLoading}
           featured
+          action={<HideBalanceToggle />}
           className="col-span-2 sm:col-span-1"
         />
         <StatCard
@@ -162,6 +167,7 @@ function StatCard({
   loading,
   tone,
   featured,
+  action,
   className,
 }: {
   title: string
@@ -170,6 +176,7 @@ function StatCard({
   loading?: boolean
   tone?: "positive" | "negative"
   featured?: boolean
+  action?: ReactNode
   className?: string
 }) {
   return (
@@ -189,6 +196,7 @@ function StatCard({
             <Icon className="size-3.5" />
           </div>
           <p className="truncate text-xs text-muted-foreground">{title}</p>
+          {action && <span className="ml-auto -mr-1.5">{action}</span>}
         </div>
         <p
           className={cn(

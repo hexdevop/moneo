@@ -32,9 +32,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { HideBalanceToggle, MASKED_BALANCE } from "@/components/HideBalanceToggle"
 import { WheelDatePicker } from "@/components/WheelDatePicker"
 import { useAccounts } from "@/hooks/useAccounts"
+import { useMe } from "@/hooks/useAuth"
 import { useCategories } from "@/hooks/useCategories"
+import { useHideBalance } from "@/hooks/useHideBalance"
 import { useDeleteTransaction, useInfiniteTransactions } from "@/hooks/useTransactions"
 import type { TransactionFilters } from "@/hooks/useTransactions"
 import { formatDate, formatMoney, toLocalISODate } from "@/lib/format"
@@ -92,8 +95,11 @@ const DATE_PRESETS: DatePreset[] = [
 ]
 
 export function TransactionsPage() {
+  const { data: user } = useMe()
   const { data: accounts = [] } = useAccounts()
   const { data: categories = [] } = useCategories()
+  const { hidden: hideBalance } = useHideBalance()
+  const totalBalanceBase = accounts.reduce((sum, a) => sum + a.balance_base, 0)
   const [filters, setFilters] = useState<TransactionFilters>({})
   const [search, setSearch] = useState("")
   const [filtersOpen, setFiltersOpen] = useState(false)
@@ -175,6 +181,35 @@ export function TransactionsPage() {
           Добавить
         </Button>
       </div>
+
+      {accounts.length > 0 && (
+        <Card className="hidden md:block">
+          <CardContent className="pt-6">
+            <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
+              <div>
+                <div className="flex items-center gap-1">
+                  <p className="text-xs text-muted-foreground">Общий баланс</p>
+                  <HideBalanceToggle />
+                </div>
+                <p className="mt-1 text-2xl font-semibold">
+                  {hideBalance ? MASKED_BALANCE : formatMoney(totalBalanceBase, user?.base_currency ?? "USD")}
+                </p>
+              </div>
+              <div className="h-10 w-px bg-border" />
+              <div className="flex flex-1 flex-wrap gap-x-6 gap-y-2">
+                {accounts.map((a) => (
+                  <div key={a.id} className="min-w-[7rem]">
+                    <p className="truncate text-xs text-muted-foreground">{a.name}</p>
+                    <p className="text-sm font-medium">
+                      {hideBalance ? MASKED_BALANCE : formatMoney(a.balance, a.currency)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="flex gap-2">
         <div className="relative min-w-0 flex-1">

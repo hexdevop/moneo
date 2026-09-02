@@ -12,6 +12,7 @@ export interface User {
   name: string
   base_currency: string
   theme_preference: ThemePreference
+  hide_accounts_balance: boolean
   has_avatar: boolean
 }
 

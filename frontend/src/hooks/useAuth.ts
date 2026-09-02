@@ -60,7 +60,9 @@ export function useLogout() {
 export function useUpdateMe() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async (payload: Partial<Pick<User, "name" | "base_currency" | "theme_preference">>) => {
+    mutationFn: async (
+      payload: Partial<Pick<User, "name" | "base_currency" | "theme_preference" | "hide_accounts_balance">>
+    ) => {
       const { data } = await api.patch<User>("/auth/me", payload)
       return data
     },
