@@ -1,4 +1,4 @@
-import { Camera, Loader2, Plus, Trash2 } from "lucide-react"
+import { Camera, Loader2, Plus, ShieldCheck, Tags, Trash2, User } from "lucide-react"
 import { useRef, useState } from "react"
 import type { ChangeEvent, FormEvent } from "react"
 import { toast } from "sonner"
@@ -59,7 +59,7 @@ const CATEGORY_ICONS = [
 
 export function SettingsPage() {
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="max-w-3xl space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">Настройки</h1>
         <p className="text-sm text-muted-foreground">Профиль, категории и безопасность аккаунта</p>
@@ -70,10 +70,19 @@ export function SettingsPage() {
       <OnboardingCard />
 
       <Tabs defaultValue="profile">
-        <TabsList>
-          <TabsTrigger value="profile">Профиль</TabsTrigger>
-          <TabsTrigger value="categories">Категории</TabsTrigger>
-          <TabsTrigger value="security">Безопасность</TabsTrigger>
+        <TabsList variant="line" className="w-full justify-start border-b border-border">
+          <TabsTrigger value="profile" className="gap-2 px-3 py-2.5">
+            <User className="size-4" />
+            Профиль
+          </TabsTrigger>
+          <TabsTrigger value="categories" className="gap-2 px-3 py-2.5">
+            <Tags className="size-4" />
+            Категории
+          </TabsTrigger>
+          <TabsTrigger value="security" className="gap-2 px-3 py-2.5">
+            <ShieldCheck className="size-4" />
+            Безопасность
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="profile" className="mt-6">
           <ProfileTab />
@@ -124,7 +133,7 @@ function ProfileIdentityCard() {
   }
 
   return (
-    <div className="flex items-center gap-4 rounded-xl border border-border bg-card p-4">
+    <div className="flex flex-col items-center gap-5 rounded-xl border border-border bg-card p-6 text-center sm:flex-row sm:text-left">
       <button
         type="button"
         onClick={() => fileInputRef.current?.click()}
@@ -132,43 +141,40 @@ function ProfileIdentityCard() {
         className="group relative shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         aria-label="Изменить фото профиля"
       >
-        <Avatar size="lg">
+        <Avatar size="xl">
           {user.has_avatar && <AvatarImage src={avatarUrl(user.id)} alt={user.name} />}
-          <AvatarFallback className="text-base font-medium">{initials(user.name)}</AvatarFallback>
+          <AvatarFallback className="font-medium">{initials(user.name)}</AvatarFallback>
         </Avatar>
         <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/0 opacity-0 transition-opacity group-hover:bg-black/40 group-hover:opacity-100">
-          <Camera className="size-4 text-white" />
+          <Camera className="size-6 text-white" />
         </span>
         {pending && (
           <span className="absolute inset-0 flex items-center justify-center rounded-full bg-background/70">
-            <Loader2 className="size-4 animate-spin" />
+            <Loader2 className="size-6 animate-spin" />
           </span>
         )}
       </button>
 
       <div className="min-w-0 flex-1">
-        <p className="truncate font-medium">{user.name}</p>
+        <p className="truncate text-xl font-semibold">{user.name}</p>
         <p className="truncate text-sm text-muted-foreground">
           {user.email} · @{user.username}
         </p>
-        <div className="mt-1.5 flex gap-3">
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={pending}
-            className="text-xs font-medium text-primary hover:underline disabled:pointer-events-none disabled:opacity-50"
-          >
+        <div className="mt-3 flex justify-center gap-2 sm:justify-start">
+          <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={pending}>
             Изменить фото
-          </button>
+          </Button>
           {user.has_avatar && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
+              className="text-destructive hover:text-destructive"
               onClick={handleDelete}
               disabled={pending}
-              className="text-xs font-medium text-destructive hover:underline disabled:pointer-events-none disabled:opacity-50"
             >
               Удалить фото
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -345,9 +351,13 @@ function CategoriesTab() {
   return (
     <div className="space-y-6">
       <Tabs value={type} onValueChange={(v) => setType(v as CategoryType)}>
-        <TabsList>
-          <TabsTrigger value="expense">Расходы</TabsTrigger>
-          <TabsTrigger value="income">Доходы</TabsTrigger>
+        <TabsList className="h-9 border border-border bg-transparent">
+          <TabsTrigger value="expense" className="px-4 text-sm">
+            Расходы
+          </TabsTrigger>
+          <TabsTrigger value="income" className="px-4 text-sm">
+            Доходы
+          </TabsTrigger>
         </TabsList>
       </Tabs>
 

@@ -62,8 +62,8 @@ function TabsIndicator({ className, ...props }: TabsPrimitive.Indicator.Props) {
     <TabsPrimitive.Indicator
       data-slot="tabs-indicator"
       className={cn(
-        "absolute top-[3px] left-0 -z-10 h-[calc(100%-6px)] w-(--active-tab-width) translate-x-(--active-tab-left) rounded-md bg-background shadow-sm transition-[translate,width] duration-200 ease-out",
-        "group-data-[variant=line]/tabs-list:top-auto group-data-[variant=line]/tabs-list:bottom-[-5px] group-data-[variant=line]/tabs-list:h-0.5 group-data-[variant=line]/tabs-list:rounded-none group-data-[variant=line]/tabs-list:bg-foreground group-data-[variant=line]/tabs-list:shadow-none",
+        "absolute top-[3px] left-0 -z-10 h-[calc(100%-6px)] w-(--active-tab-width) translate-x-(--active-tab-left) rounded-md bg-background shadow-sm transition-[translate,width,height] duration-200 ease-out",
+        "group-data-[variant=line]/tabs-list:top-auto group-data-[variant=line]/tabs-list:bottom-[-1px] group-data-[variant=line]/tabs-list:h-0.5 group-data-[variant=line]/tabs-list:rounded-none group-data-[variant=line]/tabs-list:bg-primary group-data-[variant=line]/tabs-list:shadow-none",
         "dark:bg-input/30",
         className
       )}
