@@ -32,7 +32,7 @@ import { formatDate, toLocalISODate } from "@/lib/format"
 import type { Transaction, TransactionType } from "@/types"
 
 const COMMON_CURRENCIES = ["USD", "EUR", "UZS", "RUB", "GBP"]
-const FEE_PRESETS = [0.1, 0.2, 0.5, 1, 2]
+const FEE_PRESETS = [0.1, 0.2, 0.3, 0.4, 0.5, 1, 2]
 
 interface TransactionFormProps {
   open: boolean
