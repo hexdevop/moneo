@@ -24,6 +24,7 @@ class GoalOut(BaseModel):
     name: str
     target_amount: float
     current_amount: float
+    current_amount_base: float
     currency: str
     deadline: date | None
     linked_account_id: int | None

@@ -32,6 +32,7 @@ import {
 } from "@/hooks/useAccounts"
 import { useMe } from "@/hooks/useAuth"
 import { useHideBalance } from "@/hooks/useHideBalance"
+import { useReservedForGoals } from "@/hooks/useReservedForGoals"
 import { formatMoney } from "@/lib/format"
 import type { Account, AccountType } from "@/types"
 
@@ -57,6 +58,7 @@ export function AccountsPage() {
   const { data: user } = useMe()
   const { data: accounts = [], isLoading } = useAccounts(true)
   const { hidden: hideBalance } = useHideBalance()
+  const reservedForGoals = useReservedForGoals()
   const [dialogOpen, setDialogOpen] = useState(false)
 
   const totalBalanceBase = accounts
@@ -86,6 +88,11 @@ export function AccountsPage() {
             <p className="mt-1 text-2xl font-semibold">
               {hideBalance ? MASKED_BALANCE : formatMoney(totalBalanceBase, user?.base_currency ?? "USD")}
             </p>
+            {!hideBalance && reservedForGoals > 0 && (
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Свободно: {formatMoney(totalBalanceBase - reservedForGoals, user?.base_currency ?? "USD")}
+              </p>
+            )}
           </CardContent>
         </Card>
       )}

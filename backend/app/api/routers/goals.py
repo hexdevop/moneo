@@ -11,6 +11,7 @@ from app.models.account import Account
 from app.models.goal import Goal
 from app.models.user import User
 from app.schemas.goal import GoalCreate, GoalOut, GoalUpdate
+from app.services.currency import get_exchange_rate
 
 router = APIRouter(prefix="/goals", tags=["goals"])
 
@@ -22,18 +23,20 @@ def _months_remaining(deadline: date) -> int:
     return max(months, 1)
 
 
-def _to_out(goal: Goal) -> GoalOut:
+async def _to_out(db: AsyncSession, user: User, goal: Goal) -> GoalOut:
     target = float(goal.target_amount)
     current = float(goal.current_amount)
     remaining = max(target - current, 0.0)
     recommended = None
     if goal.deadline is not None and remaining > 0:
         recommended = round(remaining / _months_remaining(goal.deadline), 2)
+    rate = await get_exchange_rate(db, goal.currency, user.base_currency)
     return GoalOut(
         id=goal.id,
         name=goal.name,
         target_amount=target,
         current_amount=current,
+        current_amount_base=round(current * rate, 2),
         currency=goal.currency,
         deadline=goal.deadline,
         linked_account_id=goal.linked_account_id,
@@ -59,7 +62,7 @@ async def list_goals(user: User = Depends(get_current_user), db: AsyncSession = 
             .order_by(Goal.id)
         )
     ).scalars().all()
-    return [_to_out(g) for g in goals]
+    return [await _to_out(db, user, g) for g in goals]
 
 
 @router.post("", response_model=GoalOut, status_code=status.HTTP_201_CREATED)
@@ -72,7 +75,7 @@ async def create_goal(
     db.add(goal)
     await db.commit()
     await db.refresh(goal)
-    return _to_out(goal)
+    return await _to_out(db, user, goal)
 
 
 async def _get_owned_goal(db: AsyncSession, user: User, goal_id: int) -> Goal:
@@ -97,7 +100,7 @@ async def update_goal(
         setattr(goal, field, value)
     await db.commit()
     await db.refresh(goal)
-    return _to_out(goal)
+    return await _to_out(db, user, goal)
 
 
 @router.delete("/{goal_id}", status_code=status.HTTP_204_NO_CONTENT)

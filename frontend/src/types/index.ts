@@ -90,6 +90,7 @@ export interface Goal {
   name: string
   target_amount: number
   current_amount: number
+  current_amount_base: number
   currency: string
   deadline: string | null
   linked_account_id: number | null

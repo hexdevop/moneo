@@ -22,6 +22,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useCategoryBreakdown, useDashboardSummary, useDashboardTrend } from "@/hooks/useDashboard"
 import { useMe } from "@/hooks/useAuth"
 import { useHideBalance } from "@/hooks/useHideBalance"
+import { useReservedForGoals } from "@/hooks/useReservedForGoals"
 import { formatMonth, formatMoney, toLocalISODate } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
@@ -31,6 +32,7 @@ export function DashboardPage() {
   const { data: user } = useMe()
   const currency = user?.base_currency ?? "USD"
   const { hidden: hideBalance } = useHideBalance()
+  const reservedForGoals = useReservedForGoals()
   const { data: summary, isLoading: summaryLoading } = useDashboardSummary()
   const { data: trend = [] } = useDashboardTrend(6)
 
@@ -57,6 +59,11 @@ export function DashboardPage() {
         <StatCard
           title="Общий баланс"
           value={hideBalance ? MASKED_BALANCE : summary ? formatMoney(summary.balance_total_base, currency) : "—"}
+          subtitle={
+            !hideBalance && summary && reservedForGoals > 0
+              ? `Свободно: ${formatMoney(summary.balance_total_base - reservedForGoals, currency)}`
+              : undefined
+          }
           icon={Wallet}
           loading={summaryLoading}
           featured
@@ -163,6 +170,7 @@ export function DashboardPage() {
 function StatCard({
   title,
   value,
+  subtitle,
   icon: Icon,
   loading,
   tone,
@@ -172,6 +180,7 @@ function StatCard({
 }: {
   title: string
   value: string
+  subtitle?: string
   icon: typeof Wallet
   loading?: boolean
   tone?: "positive" | "negative"
@@ -206,6 +215,7 @@ function StatCard({
         >
           {loading ? "…" : value}
         </p>
+        {subtitle && <p className="mt-0.5 truncate text-xs text-muted-foreground">{subtitle}</p>}
       </CardContent>
     </Card>
   )

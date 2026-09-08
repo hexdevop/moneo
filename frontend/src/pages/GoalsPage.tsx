@@ -1,4 +1,4 @@
-import { Plus, Target, Trash2 } from "lucide-react"
+import { Minus, PiggyBank, Plus, Target, Trash2 } from "lucide-react"
 import { useState } from "react"
 import type { FormEvent } from "react"
 import { toast } from "sonner"
@@ -20,14 +20,15 @@ import { WheelDatePicker } from "@/components/WheelDatePicker"
 import { useCreateGoal, useDeleteGoal, useGoals, useUpdateGoal } from "@/hooks/useGoals"
 import { useMe } from "@/hooks/useAuth"
 import { formatDate, formatMoney, toLocalISODate } from "@/lib/format"
+import type { Goal } from "@/types"
 
 export function GoalsPage() {
   const { data: user } = useMe()
   const { data: goals = [], isLoading } = useGoals()
   const deleteGoal = useDeleteGoal()
-  const updateGoal = useUpdateGoal()
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [contributionDraft, setContributionDraft] = useState<Record<number, string>>({})
+  const [contributingGoalId, setContributingGoalId] = useState<number | null>(null)
+  const contributingGoal = goals.find((g) => g.id === contributingGoalId) ?? null
 
   async function handleDelete(id: number) {
     try {
@@ -36,14 +37,6 @@ export function GoalsPage() {
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Не удалось удалить цель")
     }
-  }
-
-  async function handleAddContribution(id: number, currentAmount: number) {
-    const raw = contributionDraft[id]
-    const value = Number(raw)
-    if (!raw || Number.isNaN(value) || value <= 0) return
-    await updateGoal.mutateAsync({ id, current_amount: currentAmount + value })
-    setContributionDraft((d) => ({ ...d, [id]: "" }))
   }
 
   return (
@@ -97,30 +90,105 @@ export function GoalsPage() {
                   </p>
                 )}
 
-                <div className="mt-4 flex gap-2">
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="Пополнить на…"
-                    className="h-8"
-                    value={contributionDraft[goal.id] ?? ""}
-                    onChange={(e) => setContributionDraft((d) => ({ ...d, [goal.id]: e.target.value }))}
-                  />
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleAddContribution(goal.id, goal.current_amount)}
-                  >
-                    Добавить
-                  </Button>
-                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="mt-4 w-full gap-1.5"
+                  onClick={() => setContributingGoalId(goal.id)}
+                >
+                  <PiggyBank className="size-3.5" />
+                  Пополнить / снять
+                </Button>
               </CardContent>
             </Card>
           ))}
         </div>
       )}
+
+      <Dialog open={!!contributingGoal} onOpenChange={(open) => !open && setContributingGoalId(null)}>
+        {contributingGoal && <GoalContributionDialog goal={contributingGoal} />}
+      </Dialog>
     </div>
+  )
+}
+
+function GoalContributionDialog({ goal }: { goal: Goal }) {
+  const updateGoal = useUpdateGoal()
+  const [amount, setAmount] = useState("")
+
+  async function handleContribute(sign: 1 | -1) {
+    const value = Number(amount)
+    if (!amount || Number.isNaN(value) || value <= 0) return
+    const next = Math.max(goal.current_amount + sign * value, 0)
+    try {
+      await updateGoal.mutateAsync({ id: goal.id, current_amount: next })
+      toast.success(sign > 0 ? "Цель пополнена" : "Сумма списана с цели")
+      setAmount("")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Не удалось изменить сумму")
+    }
+  }
+
+  return (
+    <DialogContent className="sm:max-w-xs">
+      <DialogHeader>
+        <DialogTitle>{goal.name}</DialogTitle>
+      </DialogHeader>
+
+      <div className="space-y-4">
+        <div className="space-y-1.5">
+          <Progress value={Math.min(goal.progress * 100, 100)} />
+          <div className="flex justify-between text-sm">
+            <span className="font-medium">{formatMoney(goal.current_amount, goal.currency)}</span>
+            <span className="text-muted-foreground">из {formatMoney(goal.target_amount, goal.currency)}</span>
+          </div>
+        </div>
+
+        <form
+          onSubmit={(e: FormEvent) => {
+            e.preventDefault()
+            handleContribute(1)
+          }}
+          className="space-y-3"
+        >
+          <div className="space-y-1.5">
+            <Label htmlFor="goal-amount">Сумма</Label>
+            <Input
+              id="goal-amount"
+              type="number"
+              min="0"
+              step="0.01"
+              autoFocus
+              placeholder="0"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1 gap-1.5"
+              disabled={updateGoal.isPending || goal.current_amount <= 0}
+              onClick={() => handleContribute(-1)}
+            >
+              <Minus className="size-3.5" />
+              Снять
+            </Button>
+            <Button type="submit" className="flex-1 gap-1.5" disabled={updateGoal.isPending}>
+              <Plus className="size-3.5" />
+              Пополнить
+            </Button>
+          </div>
+        </form>
+
+        <p className="text-xs text-muted-foreground">
+          Деньги на цели — виртуальный резерв: они не списываются со счетов, а лишь откладываются
+          «в уме». Общий баланс не меняется, но на дашборде и в счетах видно, сколько остаётся
+          свободным без учёта отложенного на цели.
+        </p>
+      </div>
+    </DialogContent>
   )
 }
 
