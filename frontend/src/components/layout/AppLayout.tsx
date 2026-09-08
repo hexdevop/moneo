@@ -16,12 +16,14 @@ import {
 import { useState } from "react"
 import { NavLink, Outlet } from "react-router-dom"
 
+import { WelcomeModal } from "@/components/onboarding/WelcomeModal"
 import { ThemeToggle } from "@/components/ThemeToggle"
 import { TransactionForm } from "@/components/TransactionForm"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { useLogout, useMe } from "@/hooks/useAuth"
 import { avatarUrl } from "@/lib/api"
+import { isDemoMode } from "@/lib/demo/store"
 import { initials } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
@@ -67,8 +69,18 @@ export function AppLayout() {
           open ? "md:w-60 md:px-4" : "md:w-16 md:px-2"
         )}
       >
-        <div className={cn("mb-8 flex items-center px-2", !open && "md:justify-center md:px-0")}>
+        <div className={cn("mb-8 flex items-center gap-2 px-2", !open && "md:justify-center md:px-0")}>
           <span className={cn("text-xl font-semibold tracking-tight", !open && "md:hidden")}>Moneo</span>
+          {isDemoMode() && (
+            <span
+              className={cn(
+                "rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400",
+                !open && "md:hidden"
+              )}
+            >
+              Демо
+            </span>
+          )}
         </div>
         <nav className="flex flex-1 flex-col gap-1 overflow-y-auto">
           {NAV_ITEMS.map((item) => (
@@ -152,6 +164,7 @@ export function AppLayout() {
         <Plus className="size-6" />
       </Button>
       <TransactionForm open={quickAddOpen} onOpenChange={setQuickAddOpen} />
+      <WelcomeModal />
     </div>
   )
 }

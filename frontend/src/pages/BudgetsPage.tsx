@@ -4,6 +4,7 @@ import type { FormEvent } from "react"
 import { toast } from "sonner"
 
 import { CategoryIcon } from "@/components/CategoryIcon"
+import { InfoTooltip } from "@/components/InfoTooltip"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import {
@@ -82,7 +83,12 @@ export function BudgetsPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-semibold">Бюджеты</h1>
+        <div className="flex items-center gap-1.5">
+          <h1 className="text-2xl font-semibold">Бюджеты</h1>
+          <InfoTooltip>
+            Зелёный — потрачено меньше 70% лимита, жёлтый — от 70% до 100%, красный — лимит превышен.
+          </InfoTooltip>
+        </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-2">
             <Button variant="outline" size="icon" onClick={() => shiftMonth(-1)} aria-label="Предыдущий месяц">

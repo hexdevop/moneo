@@ -1,10 +1,18 @@
 import axios from "axios"
 
+import { demoAdapter } from "@/lib/demo/adapter"
+import { isDemoMode } from "@/lib/demo/store"
+
 const API_BASE = `${import.meta.env.VITE_API_URL ?? ""}/api`
 
 export const api = axios.create({
   baseURL: API_BASE,
   withCredentials: true,
+})
+
+api.interceptors.request.use((config) => {
+  if (isDemoMode()) config.adapter = demoAdapter
+  return config
 })
 
 export function avatarUrl(userId: number): string {

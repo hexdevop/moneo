@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query"
 import { motion } from "framer-motion"
 import { useState } from "react"
 import type { FormEvent } from "react"
@@ -9,10 +10,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useLogin, useMe } from "@/hooks/useAuth"
+import { enterDemoMode, getDemoUser } from "@/lib/demo/store"
 
 export function LoginPage() {
   const { data: user } = useMe()
   const login = useLogin()
+  const queryClient = useQueryClient()
   const [loginValue, setLoginValue] = useState("")
   const [password, setPassword] = useState("")
 
@@ -25,6 +28,11 @@ export function LoginPage() {
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Не удалось войти")
     }
+  }
+
+  function handleTryDemo() {
+    enterDemoMode()
+    queryClient.setQueryData(["me"], getDemoUser())
   }
 
   return (
@@ -71,6 +79,19 @@ export function LoginPage() {
                 Войти
               </Button>
             </form>
+
+            <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground">
+              <span className="h-px flex-1 bg-border" />
+              или
+              <span className="h-px flex-1 bg-border" />
+            </div>
+            <Button type="button" variant="outline" className="w-full" onClick={handleTryDemo}>
+              Попробовать демо
+            </Button>
+            <p className="mt-1.5 text-center text-xs text-muted-foreground">
+              Без регистрации — демо-данные хранятся только в этом браузере
+            </p>
+
             <p className="mt-4 text-center text-sm text-muted-foreground">
               Нет аккаунта?{" "}
               <Link to="/register" className="text-foreground underline underline-offset-4">

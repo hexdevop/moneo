@@ -3,6 +3,7 @@ import { useState } from "react"
 import type { FormEvent } from "react"
 import { toast } from "sonner"
 
+import { InfoTooltip } from "@/components/InfoTooltip"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import {
@@ -85,8 +86,12 @@ export function GoalsPage() {
                   <p className="mt-2 text-xs text-muted-foreground">Срок: {formatDate(goal.deadline)}</p>
                 )}
                 {goal.recommended_monthly_contribution != null && (
-                  <p className="mt-1 text-xs text-muted-foreground">
+                  <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
                     Рекомендуемый взнос в месяц: {formatMoney(goal.recommended_monthly_contribution, goal.currency)}
+                    <InfoTooltip>
+                      Остаток до цели, поделённый на количество месяцев до срока — сколько нужно откладывать
+                      ежемесячно, чтобы успеть.
+                    </InfoTooltip>
                   </p>
                 )}
 

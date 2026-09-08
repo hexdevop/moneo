@@ -3,6 +3,7 @@ import type { FormEvent } from "react"
 import { toast } from "sonner"
 
 import { CategoryIcon } from "@/components/CategoryIcon"
+import { InfoTooltip } from "@/components/InfoTooltip"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -269,7 +270,12 @@ export function TransactionForm({
           {selectedAccount?.type === "card" && (
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <Label htmlFor="fee-toggle">Комиссия за операцию</Label>
+                <div className="flex items-center gap-1.5">
+                  <Label htmlFor="fee-toggle">Комиссия за операцию</Label>
+                  <InfoTooltip>
+                    Списывается со счёта дополнительно к сумме операции и уменьшает баланс счёта.
+                  </InfoTooltip>
+                </div>
                 <Switch id="fee-toggle" checked={feeEnabled} onCheckedChange={setFeeEnabled} />
               </div>
               {feeEnabled && (

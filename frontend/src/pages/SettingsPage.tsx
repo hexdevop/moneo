@@ -17,17 +17,21 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
+import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   useChangePassword,
   useDeleteAvatar,
+  useLogout,
   useMe,
   useUpdateMe,
   useUploadAvatar,
 } from "@/hooks/useAuth"
 import { useCategories, useCreateCategory, useDeleteCategory } from "@/hooks/useCategories"
 import { avatarUrl } from "@/lib/api"
+import { isDemoMode, resetDemoData } from "@/lib/demo/store"
 import { initials } from "@/lib/format"
+import { isOnboardingDismissed, setOnboardingDismissed } from "@/lib/onboarding"
 import type { CategoryType } from "@/types"
 
 const ALLOWED_AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp"]
@@ -62,6 +66,8 @@ export function SettingsPage() {
       </div>
 
       <ProfileIdentityCard />
+      <DemoModeCard />
+      <OnboardingCard />
 
       <Tabs defaultValue="profile">
         <TabsList>
@@ -173,6 +179,55 @@ function ProfileIdentityCard() {
         accept="image/jpeg,image/png,image/webp"
         className="hidden"
         onChange={handleFileChange}
+      />
+    </div>
+  )
+}
+
+function DemoModeCard() {
+  const logout = useLogout()
+
+  if (!isDemoMode()) return null
+
+  function handleReset() {
+    resetDemoData()
+    window.location.reload()
+  }
+
+  return (
+    <div className="space-y-1.5 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
+      <p className="text-sm font-medium">Демо-режим</p>
+      <p className="text-sm text-muted-foreground">
+        Данные хранятся только в этом браузере и никуда не отправляются.
+      </p>
+      <div className="flex flex-wrap gap-2 pt-1.5">
+        <Button variant="outline" size="sm" onClick={handleReset}>
+          Сбросить демо-данные
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => logout.mutate()}>
+          Выйти из демо
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+function OnboardingCard() {
+  const [enabled, setEnabled] = useState(() => !isOnboardingDismissed())
+
+  return (
+    <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card p-4">
+      <div>
+        <Label htmlFor="onboarding-toggle">Показывать приветствие при входе</Label>
+        <p className="text-sm text-muted-foreground">Краткая подсказка о том, с чего начать работу в Moneo</p>
+      </div>
+      <Switch
+        id="onboarding-toggle"
+        checked={enabled}
+        onCheckedChange={(v) => {
+          setEnabled(v)
+          setOnboardingDismissed(!v)
+        }}
       />
     </div>
   )
