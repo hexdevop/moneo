@@ -168,6 +168,7 @@ moneo/
  ├─ docker-compose.prod.caddy.yml  оверлей: + Caddy (для VPS без своего nginx)
  ├─ docker-compose.prod.nginx.yml  оверлей: frontend на 127.0.0.1 (для VPS со своим nginx)
  ├─ deploy/nginx.conf.example      пример конфига хостового nginx для варианта B
+ ├─ docs/IDEAS.md      бэклог идей и будущих изменений (не привязан к релизам)
  ├─ Caddyfile
  ├─ .env.example
  └─ CLAUDE.md         заметки по архитектуре для разработки с Claude Code

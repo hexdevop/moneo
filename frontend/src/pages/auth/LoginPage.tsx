@@ -5,6 +5,7 @@ import type { FormEvent } from "react"
 import { Link, Navigate } from "react-router-dom"
 import { toast } from "sonner"
 
+import { GithubIcon } from "@/components/icons/GithubIcon"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -100,6 +101,16 @@ export function LoginPage() {
             </p>
           </CardContent>
         </Card>
+
+        <a
+          href="https://github.com/hexdevop/moneo"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-4 flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+        >
+          <GithubIcon className="size-3.5" />
+          Исходный код на GitHub
+        </a>
       </motion.div>
     </div>
   )

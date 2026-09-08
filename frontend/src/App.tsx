@@ -10,6 +10,7 @@ import { LoginPage } from "@/pages/auth/LoginPage"
 import { RegisterPage } from "@/pages/auth/RegisterPage"
 import { ResetPasswordPage } from "@/pages/auth/ResetPasswordPage"
 import { BudgetsPage } from "@/pages/BudgetsPage"
+import { ChangelogPage } from "@/pages/ChangelogPage"
 import { DashboardPage } from "@/pages/DashboardPage"
 import { GoalsPage } from "@/pages/GoalsPage"
 import { RecurringPage } from "@/pages/RecurringPage"
@@ -36,6 +37,7 @@ export default function App() {
             <Route path="/goals" element={<GoalsPage />} />
             <Route path="/trash" element={<TrashPage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/changelog" element={<ChangelogPage />} />
           </Route>
         </Routes>
         <Toaster />

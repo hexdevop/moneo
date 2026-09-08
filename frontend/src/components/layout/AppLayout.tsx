@@ -1,5 +1,6 @@
 import { motion } from "framer-motion"
 import {
+  History,
   LayoutDashboard,
   ListTree,
   LogOut,
@@ -14,8 +15,9 @@ import {
   WalletCards,
 } from "lucide-react"
 import { useState } from "react"
-import { NavLink, Outlet } from "react-router-dom"
+import { NavLink, Outlet, useLocation } from "react-router-dom"
 
+import { GithubIcon } from "@/components/icons/GithubIcon"
 import { WelcomeModal } from "@/components/onboarding/WelcomeModal"
 import { ThemeToggle } from "@/components/ThemeToggle"
 import { TransactionForm } from "@/components/TransactionForm"
@@ -23,9 +25,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { useLogout, useMe } from "@/hooks/useAuth"
 import { avatarUrl } from "@/lib/api"
+import { isChangelogUnseen } from "@/lib/changelog"
 import { isDemoMode } from "@/lib/demo/store"
 import { initials } from "@/lib/format"
 import { cn } from "@/lib/utils"
+
+const GITHUB_URL = "https://github.com/hexdevop/moneo"
 
 const NAV_ITEMS = [
   { to: "/", label: "Дашборд", icon: LayoutDashboard, end: true },
@@ -35,6 +40,7 @@ const NAV_ITEMS = [
   { to: "/recurring", label: "Подписки", icon: Repeat },
   { to: "/goals", label: "Цели", icon: Target },
   { to: "/trash", label: "Корзина", icon: Trash2 },
+  { to: "/changelog", label: "Что нового", icon: History },
   { to: "/settings", label: "Настройки", icon: Settings },
 ]
 
@@ -45,6 +51,11 @@ const isDesktop = () => window.innerWidth >= 768
 export function AppLayout() {
   const { data: user } = useMe()
   const logout = useLogout()
+  // Re-read on every navigation (ChangelogPage marks itself seen on mount) —
+  // useLocation() just needs to be called to make this component re-render;
+  // the actual value it returns isn't used below.
+  useLocation()
+  const changelogUnseen = isChangelogUnseen()
   const [quickAddOpen, setQuickAddOpen] = useState(false)
   const [open, setOpen] = useState(isDesktop)
 
@@ -100,7 +111,12 @@ export function AppLayout() {
                 )
               }
             >
-              <item.icon className="size-4 shrink-0" />
+              <span className="relative shrink-0">
+                <item.icon className="size-4" />
+                {item.to === "/changelog" && changelogUnseen && (
+                  <span className="absolute -top-0.5 -right-0.5 size-1.5 rounded-full bg-primary ring-2 ring-card" />
+                )}
+              </span>
               <span className={cn(!open && "md:hidden")}>{item.label}</span>
             </NavLink>
           ))}
@@ -141,6 +157,9 @@ export function AppLayout() {
           </Button>
           <span className="text-lg font-semibold tracking-tight md:hidden">Moneo</span>
           <div className="ml-auto flex items-center gap-2">
+            <Button variant="ghost" size="icon-sm" render={<a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" />} title="Исходный код на GitHub" aria-label="Исходный код на GitHub">
+              <GithubIcon className="size-4" />
+            </Button>
             <ThemeToggle />
           </div>
         </header>

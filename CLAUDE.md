@@ -7,8 +7,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Always respond to the user in Russian in this repository, regardless of what language they
 write in — this has been requested explicitly more than once. Code, identifiers, commit
 messages, and comments stay in English as usual; only the chat responses are Russian.
-Never run `git commit`/`git push` yourself — always give the user the commit message text
-and let them run it.
+Never run `git commit`/`git push`/`git tag` yourself — always give the user the exact
+commands and let them run it. Give the commit message as plain text in the chat reply
+(a heredoc in the command block), not written to a temp file and passed via `-F`.
+
+## Versioning and releases
+
+Releases are git tags (semver: `vMAJOR.MINOR.PATCH`), matched one-to-one with an entry in
+`frontend/src/lib/changelog.ts` (newest entry first — `CURRENT_VERSION` and the sidebar's
+unseen-update dot both derive from `CHANGELOG[0]`). This is proactive: when a batch of
+work looks release-worthy, or the user asks anything about versions/tags/releases, bring
+it up yourself and hand over the exact commands (`git tag -a vX.Y.Z -m "..."` and
+`git push origin vX.Y.Z`) plus the changelog entry to add — don't wait to be asked each
+time. Future feature ideas that aren't part of the current work go in `docs/IDEAS.md`,
+not a new one-off notes file.
 
 ## Project
 
